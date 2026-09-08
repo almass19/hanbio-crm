@@ -1,0 +1,32 @@
+# --- secrets / local config (NEVER commit) ---
+.env
+.env.*
+!.env.example
+credentials.json
+*.pem
+
+# --- python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# --- node / next (crm/) ---
+node_modules/
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+npm-debug.log*
+
+# --- data / runtime ---
+data/
+*.db
+*.sqlite3
+*.log
+
+# --- misc ---
+.vercel
+.DS_Store

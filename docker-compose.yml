@@ -1,0 +1,11 @@
+services:
+  bot:
+    build: .
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      # SQLite-база живёт на хосте — переживает пересборку контейнера.
+      - ./data:/app/data
+      # Ключ service account. Если Google Sheets не используются — создайте
+      # пустой файл: `touch credentials.json`.
+      - ./credentials.json:/app/credentials.json:ro
