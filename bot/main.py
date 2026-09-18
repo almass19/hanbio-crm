@@ -74,13 +74,33 @@ async def main() -> None:
     )
 
     try:
-        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+        await _start_polling_with_retry(bot, dp)
     finally:
         stop_event.set()
         sync_task.cancel()
         await asyncio.gather(sync_task, return_exceptions=True)
         await bot.session.close()
         await engine.dispose()
+
+
+async def _start_polling_with_retry(bot: Bot, dp: Dispatcher) -> None:
+    """`dp.start_polling` сам ретраит сбои внутри цикла get_updates, но первый
+    вызов — `bot.me()` — ничем не защищён: если DNS/сеть моргнёт ровно в этот
+    момент, необработанное исключение валит процесс целиком (а не просто
+    сессию). Оборачиваем старт в свой ретрай с backoff, чтобы временный сбой
+    в момент запуска не убивал бота — сторожу тогда нечего перезапускать.
+    """
+    delay = 1.0
+    while True:
+        try:
+            await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+            return  # штатная остановка (SIGINT/SIGTERM обработаны внутри aiogram)
+        except (asyncio.CancelledError, KeyboardInterrupt):
+            raise
+        except Exception:
+            log.exception("polling упал на старте, ретрай через %.0f с", delay)
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, 60.0)
 
 
 if __name__ == "__main__":
